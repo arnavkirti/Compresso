@@ -237,30 +237,6 @@ FormData {
 - **Pros and Cons**: Advantages and disadvantages of each method
 - **Use Case Guidance**: Recommendations for optimal algorithm selection
 
-## 🔧 Development
-
-### Available Scripts
-
-**Backend (server/)**
-- `npm run start` - Start production server
-- `npm run start:dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run test` - Run tests
-
-**Frontend (client/)**
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-### Adding New Algorithms
-
-1. Create a new service in `server/src/compression/`
-2. Implement `compress()` and `decompress()` methods
-3. Add the service to `compression.service.ts`
-4. Update the frontend algorithm descriptions
-5. Test thoroughly with various file types
-
 ### Deployments
 
 1. Frontend: https://compresso-psi.vercel.app/ (Deployed on Vercel)
