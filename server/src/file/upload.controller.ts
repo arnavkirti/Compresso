@@ -111,6 +111,44 @@ export class UploadController {
     }
   }
 
+  @Post('smart-compress')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.memoryStorage(),
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB limit
+      },
+    }),
+  )
+  async smartCompressFile(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{
+    success: boolean;
+    data?: CompressionResult & { compressedData: string; testedAlgorithms: any[] };
+    error?: string;
+  }> {
+    try {
+      if (!file) {
+        throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
+      }
+
+      const result = await this.compressionService.smartCompress(file.buffer);
+
+      return {
+        success: true,
+        data: {
+          ...result,
+          compressedData: result.compressed.toString('base64'),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
   @Get('download/:type/:filename')
   async downloadFile(
     @Param('type') type: string,

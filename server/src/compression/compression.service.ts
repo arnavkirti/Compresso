@@ -46,18 +46,30 @@ export class CompressionService {
     }
 
     const processingTime = Date.now() - startTime;
-    const compressionRatio = result.originalSize > 0 ? 
-      (1 - result.compressed.length / result.originalSize) * 100 : 0;
+    const originalSize = result.originalSize;
+    const compressedSize = result.compressed.length;
+    const compressionRatio = originalSize > 0 ? 
+      (1 - compressedSize / originalSize) * 100 : 0;
+
+    // Check if compression actually increased file size
+    const isCompressionEffective = compressedSize < originalSize;
+    const finalData = isCompressionEffective ? result.compressed : data;
+    const finalSize = isCompressionEffective ? compressedSize : originalSize;
+    const actualCompressionRatio = isCompressionEffective ? compressionRatio : 0;
 
     return {
-      compressed: result.compressed,
-      originalSize: result.originalSize,
-      compressedSize: result.compressed.length,
-      compressionRatio: Math.round(compressionRatio * 100) / 100,
+      compressed: finalData,
+      originalSize: originalSize,
+      compressedSize: finalSize,
+      compressionRatio: Math.round(actualCompressionRatio * 100) / 100,
       algorithm,
       metadata: {
         ...metadata,
-        processingTime
+        processingTime,
+        isCompressionEffective,
+        actualCompressedSize: compressedSize,
+        compressionIncrease: !isCompressionEffective ? compressedSize - originalSize : 0,
+        fallbackToOriginal: !isCompressionEffective
       }
     };
   }
@@ -85,6 +97,43 @@ export class CompressionService {
     return {
       decompressed,
       algorithm
+    };
+  }
+
+  async smartCompress(data: Buffer): Promise<CompressionResult & { testedAlgorithms: any[] }> {
+    const algorithms = ['huffman', 'rle', 'lz77'];
+    const results: (CompressionResult & { algorithm: string })[] = [];
+    
+    // Test all algorithms
+    for (const algorithm of algorithms) {
+      try {
+        const result = await this.compress(data, algorithm);
+        results.push(result);
+      } catch (error) {
+        console.warn(`Algorithm ${algorithm} failed:`, error.message);
+      }
+    }
+
+    // Find the best compression result
+    const bestResult = results.reduce((best, current) => {
+      // Prefer effective compression, then smallest size
+      if (current.metadata.isCompressionEffective && !best.metadata.isCompressionEffective) {
+        return current;
+      }
+      if (!current.metadata.isCompressionEffective && best.metadata.isCompressionEffective) {
+        return best;
+      }
+      return current.compressedSize < best.compressedSize ? current : best;
+    });
+
+    return {
+      ...bestResult,
+      testedAlgorithms: results.map(r => ({
+        algorithm: r.algorithm,
+        compressedSize: r.compressedSize,
+        compressionRatio: r.compressionRatio,
+        isEffective: r.metadata.isCompressionEffective
+      }))
     };
   }
 

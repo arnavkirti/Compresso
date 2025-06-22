@@ -74,6 +74,27 @@ export class CompressionAPI {
     }
   }
 
+  static async smartCompressFile(file: File): Promise<ApiResponse<ApiCompressionResult & { testedAlgorithms: any[] }>> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/files/smart-compress', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Smart compression error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Smart compression failed',
+      };
+    }
+  }
+
   static generateDownloadUrl(type: 'compressed' | 'decompressed', filename: string, data: string): string {
     const params = new URLSearchParams({ data });
     return `${API_BASE_URL}/files/download/${type}/${encodeURIComponent(filename)}?${params.toString()}`;

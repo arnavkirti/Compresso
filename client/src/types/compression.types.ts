@@ -4,7 +4,15 @@ export interface CompressionResult {
   compressedSize: number;
   compressionRatio: number;
   algorithm: string;
-  metadata?: any;
+  metadata?: {
+    processingTime?: number;
+    isCompressionEffective?: boolean;
+    actualCompressedSize?: number;
+    compressionIncrease?: number;
+    fallbackToOriginal?: boolean;
+    tree?: any; // For Huffman
+    [key: string]: any;
+  };
 }
 
 export interface ApiCompressionResult extends Omit<CompressionResult, 'compressed'> {

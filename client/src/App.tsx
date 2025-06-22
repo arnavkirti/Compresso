@@ -8,8 +8,10 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
 import { StatsVisualization } from './components/StatsVisualization';
 import { AlgorithmInfo } from './components/AlgorithmInfo';
+import { CompressionWarning } from './components/CompressionWarning';
+import { FileCompressionTip } from './components/FileCompressionTip';
 import CompressionAPI from './utils/api';
-import type { ApiCompressionResult, FileProcessingStats } from './types/compression.types';
+import type { ApiCompressionResult } from './types/compression.types';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -21,6 +23,8 @@ function App() {
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<ApiCompressionResult | null>(null);
   const [showAlgorithmInfo, setShowAlgorithmInfo] = useState(false);
+  const [isSmartCompression, setIsSmartCompression] = useState(false);
+  const [testedAlgorithms, setTestedAlgorithms] = useState<any[]>([]);
 
   // Load algorithms on component mount
   useEffect(() => {
@@ -51,6 +55,8 @@ function App() {
     setLoadingMessage('Compressing file...');
     setError('');
     setResult(null);
+    setIsSmartCompression(false);
+    setTestedAlgorithms([]);
 
     try {
       const response = await CompressionAPI.compressFile(selectedFile, selectedAlgorithm);
@@ -62,6 +68,37 @@ function App() {
       }
     } catch (err) {
       setError('Compression failed');
+    } finally {
+      setIsLoading(false);
+      setLoadingMessage('');
+    }
+  };
+
+  const handleSmartCompress = async () => {
+    if (!selectedFile) {
+      setError('Please select a file first');
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingMessage('Testing all algorithms to find the best compression...');
+    setError('');
+    setResult(null);
+    setIsSmartCompression(true);
+    setTestedAlgorithms([]);
+
+    try {
+      const response = await CompressionAPI.smartCompressFile(selectedFile);
+      
+      if (response.success && response.data) {
+        setResult(response.data);
+        setTestedAlgorithms(response.data.testedAlgorithms || []);
+        setSelectedAlgorithm(response.data.algorithm); // Update selected algorithm to the best one
+      } else {
+        setError(response.error || 'Smart compression failed');
+      }
+    } catch (err) {
+      setError('Smart compression failed');
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
@@ -101,6 +138,8 @@ function App() {
     setSelectedAlgorithm('');
     setResult(null);
     setError('');
+    setIsSmartCompression(false);
+    setTestedAlgorithms([]);
   };
 
   const canCompress = selectedFile && selectedAlgorithm && !isLoading;
@@ -177,6 +216,12 @@ function App() {
                   selectedFile={selectedFile}
                   onFileSelect={setSelectedFile}
                 />
+                {/* Compression Tip */}
+                {selectedFile && (
+                  <div className="mt-3">
+                    <FileCompressionTip file={selectedFile} />
+                  </div>
+                )}
               </div>
 
               {/* Algorithm Selection */}
@@ -194,9 +239,9 @@ function App() {
                 </div>
               )}
 
-              {/* Compress Button */}
+              {/* Compress Buttons */}
               {selectedFile && selectedAlgorithm && (
-                <div className="flex justify-center pt-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4">
                   <button
                     onClick={handleCompress}
                     disabled={!canCompress}
@@ -208,7 +253,40 @@ function App() {
                       }
                     `}
                   >
-                    Compress File
+                    Compress with {selectedAlgorithm.toUpperCase()}
+                  </button>
+                  
+                  <button
+                    onClick={handleSmartCompress}
+                    disabled={!selectedFile || isLoading}
+                    className={`
+                      px-8 py-3 rounded-lg font-semibold transition-all duration-200 border-2
+                      ${selectedFile && !isLoading
+                        ? 'border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white transform hover:scale-105'
+                        : 'border-gray-400 text-gray-400 cursor-not-allowed'
+                      }
+                    `}
+                  >
+                    Smart Compress (Auto-select Best)
+                  </button>
+                </div>
+              )}
+
+              {/* Quick Smart Compress for files without algorithm selection */}
+              {selectedFile && !selectedAlgorithm && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={handleSmartCompress}
+                    disabled={!selectedFile || isLoading}
+                    className={`
+                      px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200
+                      ${selectedFile && !isLoading
+                        ? 'bg-purple-600 hover:bg-purple-700 transform hover:scale-105'
+                        : 'bg-gray-400 cursor-not-allowed'
+                      }
+                    `}
+                  >
+                    Smart Compress (Try All Algorithms)
                   </button>
                 </div>
               )}
@@ -218,6 +296,14 @@ function App() {
           {/* Results */}
           {result && !isLoading && (
             <div className="space-y-6">
+              {/* Compression Warning */}
+              <CompressionWarning
+                result={result}
+                onTrySmartCompression={!isSmartCompression ? handleSmartCompress : undefined}
+                isSmartCompression={isSmartCompression}
+                testedAlgorithms={testedAlgorithms}
+              />
+              
               <CompressionResults
                 result={result}
                 originalFilename={selectedFile?.name || 'file'}
@@ -233,6 +319,7 @@ function App() {
                   processingTime: result.metadata?.processingTime || 0,
                   algorithm: result.algorithm
                 }}
+                darkMode={false}
               />
               
               <div className="flex justify-center">
