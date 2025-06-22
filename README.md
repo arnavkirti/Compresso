@@ -261,6 +261,11 @@ FormData {
 4. Update the frontend algorithm descriptions
 5. Test thoroughly with various file types
 
+### Deployments
+
+1. Frontend: https://compresso-psi.vercel.app/ (Deployed on Vercel)
+2. Backend: https://compresso-rku9.onrender.com (Deployed on Render)
+
 ## 🙏 Acknowledgments
 
 - Huffman algorithm implementation based on classic computer science principles
