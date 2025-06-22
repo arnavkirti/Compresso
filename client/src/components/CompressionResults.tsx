@@ -144,8 +144,8 @@ export const CompressionResults: React.FC<CompressionResultsProps> = ({
             onClick={onDecompress}
             className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
           >
-            <FiArchive className="h-4 w-4 transform rotate-180" />
-            <span>Test Decompression</span>
+            <FiDownload className="h-4 w-4" />
+            <span>Download Decompressed File</span>
           </button>
         )}
       </div>

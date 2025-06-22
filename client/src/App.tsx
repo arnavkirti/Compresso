@@ -106,10 +106,10 @@ function App() {
   };
 
   const handleDecompress = async () => {
-    if (!result) return;
+    if (!result || !selectedFile) return;
 
     setIsLoading(true);
-    setLoadingMessage('Testing decompression...');
+    setLoadingMessage('Decompressing file...');
     setError('');
 
     try {
@@ -119,14 +119,24 @@ function App() {
         result.metadata
       );
 
-      if (response.success) {
+      if (response.success && response.data) {
         setError(''); 
-        alert('Decompression test successful! The compressed file can be properly restored.');
+        
+        // Download the decompressed file
+        const { downloadFile } = await import('./utils/fileUtils');
+        
+        // Get original filename without extension for the decompressed file
+        const originalName = selectedFile.name.replace(/\.[^/.]+$/, '');
+        const decompressedFilename = `${originalName}_decompressed.${selectedFile.name.split('.').pop() || 'bin'}`;
+        
+        setLoadingMessage('Preparing download...');
+        downloadFile(response.data.decompressedData, decompressedFilename);
+        
       } else {
-        setError(response.error || 'Decompression test failed');
+        setError(response.error || 'Decompression failed');
       }
     } catch (err) {
-      setError('Decompression test failed');
+      setError('Decompression failed');
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
