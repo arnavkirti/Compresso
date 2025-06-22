@@ -319,7 +319,8 @@ function App() {
                   processingTime: result.metadata?.processingTime || 0,
                   algorithm: result.algorithm
                 }}
-                darkMode={false}
+                testedAlgorithms={testedAlgorithms}
+                isSmartCompression={isSmartCompression}
               />
               
               <div className="flex justify-center">

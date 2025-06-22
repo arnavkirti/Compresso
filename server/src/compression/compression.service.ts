@@ -130,9 +130,10 @@ export class CompressionService {
       ...bestResult,
       testedAlgorithms: results.map(r => ({
         algorithm: r.algorithm,
-        compressedSize: r.compressedSize,
+        compressedSize: r.metadata.actualCompressedSize || r.compressedSize,
         compressionRatio: r.compressionRatio,
-        isEffective: r.metadata.isCompressionEffective
+        isEffective: r.metadata.isCompressionEffective,
+        processingTime: r.metadata.processingTime
       }))
     };
   }
