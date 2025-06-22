@@ -32,7 +32,6 @@ export const StatsVisualization: React.FC<StatsVisualizationProps> = ({
   stats, 
   darkMode = false,
   testedAlgorithms = [],
-  isSmartCompression = false
 }) => {
   const textColor = darkMode ? '#E5E7EB' : '#374151';
   const gridColor = darkMode ? '#374151' : '#E5E7EB';
