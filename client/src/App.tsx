@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from 'react';
-import { FiCompass, FiMoon, FiSun } from 'react-icons/fi';
+import { FiCompass, FiInfo } from 'react-icons/fi';
 import { FileUpload } from './components/FileUpload';
 import { AlgorithmSelector } from './components/AlgorithmSelector';
 import { CompressionResults } from './components/CompressionResults';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorMessage } from './components/ErrorMessage';
+import { StatsVisualization } from './components/StatsVisualization';
+import { AlgorithmInfo } from './components/AlgorithmInfo';
 import CompressionAPI from './utils/api';
-import type { ApiCompressionResult, AlgorithmInfo } from './types/compression.types';
+import type { ApiCompressionResult, FileProcessingStats } from './types/compression.types';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -18,21 +20,12 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<ApiCompressionResult | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
+  const [showAlgorithmInfo, setShowAlgorithmInfo] = useState(false);
 
   // Load algorithms on component mount
   useEffect(() => {
     loadAlgorithms();
   }, []);
-
-  // Dark mode effect
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const loadAlgorithms = async () => {
     try {
@@ -90,7 +83,7 @@ function App() {
       );
 
       if (response.success) {
-        setError(''); // Clear any previous errors
+        setError(''); 
         alert('Decompression test successful! The compressed file can be properly restored.');
       } else {
         setError(response.error || 'Decompression test failed');
@@ -127,14 +120,11 @@ function App() {
             
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={() => setShowAlgorithmInfo(!showAlgorithmInfo)}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Algorithm Information"
               >
-                {darkMode ? (
-                  <FiSun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                ) : (
-                  <FiMoon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                )}
+                <FiInfo className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
           </div>
@@ -154,6 +144,11 @@ function App() {
               Run-Length Encoding, or LZ77. Compare efficiency and download results.
             </p>
           </div>
+
+          {/* Algorithm Information */}
+          {showAlgorithmInfo && algorithms.length > 0 && (
+            <AlgorithmInfo descriptions={descriptions} />
+          )}
 
           {/* Error Display */}
           {error && (
@@ -227,6 +222,17 @@ function App() {
                 result={result}
                 originalFilename={selectedFile?.name || 'file'}
                 onDecompress={handleDecompress}
+              />
+              
+              {/* Statistics Visualization */}
+              <StatsVisualization
+                stats={{
+                  originalSize: result.originalSize,
+                  processedSize: result.compressedSize,
+                  compressionRatio: result.compressionRatio,
+                  processingTime: result.metadata?.processingTime || 0,
+                  algorithm: result.algorithm
+                }}
               />
               
               <div className="flex justify-center">
