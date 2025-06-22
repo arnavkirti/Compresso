@@ -10,8 +10,33 @@ const API_BASE_URL = 'https://compresso-rku9.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 seconds
+  timeout: 60000, // Increased to 60 seconds for deployed services
 });
+
+// Add retry interceptor for better reliability
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { config } = error;
+    
+    // Retry on network errors or 5xx server errors
+    if (
+      (!config.__retryCount || config.__retryCount < 2) &&
+      (error.code === 'NETWORK_ERROR' || 
+       error.code === 'ECONNABORTED' ||
+       (error.response && error.response.status >= 500))
+    ) {
+      config.__retryCount = (config.__retryCount || 0) + 1;
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * config.__retryCount));
+      
+      return api(config);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export class CompressionAPI {
   static async compressFile(file: File, algorithm: string): Promise<ApiResponse<ApiCompressionResult>> {
